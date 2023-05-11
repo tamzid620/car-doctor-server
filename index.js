@@ -27,8 +27,10 @@ async function run() {
     await client.connect();
 
     const serviceCollection = client.db("carDoctor").collection("services");
+    const bookingCollection = client.db("carDoctor").collection("bookings");
 
-    app.get('/services', async(req, res) => {
+    // services -----------------------------
+    app.get('/services', async (req, res) => {
       const cursor = serviceCollection.find();
       const result = await cursor.toArray();
       res.send(result);
@@ -39,13 +41,22 @@ async function run() {
       const query = { _id: new ObjectId(id) }
 
       const options = {
-          // Include only the `title` and `imdb` fields in the returned document
-          projection: { title: 1, price: 1, service_id: 1, img: 1 },
+        // Include only the `title` and `imdb` fields in the returned document
+        projection: { title: 1, price: 1, service_id: 1, img: 1 },
       };
 
       const result = await serviceCollection.findOne(query, options);
       res.send(result);
-  })
+    })
+
+    // bookings -----------------------------
+    app.post('/bookings', async (req, res) => {
+      const booking = req.body;
+      console.log(booking);
+      const result = await bookingCollection.insertOne(booking);
+      res.send(result);
+    });
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
@@ -60,10 +71,10 @@ run().catch(console.dir);
 
 
 // ------------------------------------
-app.get('/', (req, res ) => {
-    res.send('car doctor is running')
+app.get('/', (req, res) => {
+  res.send('car doctor is running')
 })
 
 app.listen(port, () => {
-    console.log(`Car Doctor server is running on port ${port}`)
+  console.log(`Car Doctor server is running on port ${port}`)
 })

@@ -1,10 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const jwt   = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
-
 
 app.use(cors());
 app.use(express.json());
@@ -21,6 +21,23 @@ const client = new MongoClient(uri, {
   }
 });
 
+const verifyJWT = ( req, res , next ) => {
+  console.log('hitting vetify JWT');
+  console.log(req.headers.authorization);
+  if(authorization){
+    return res.status(401).send({error: true , message: 'unauthorized access'})
+  }
+  const token = authorization.split(' ')[1];
+  console.log('token inside vetyfy JWT' , token);
+  jwt.verify( token, process.env.ACCESS_TOKEN_SECRET , (error, decoded) => {
+    if(error){
+      return res.status(403).send({error: true, message: 'unathorized access'})
+    }
+    req.decoded = decoded;
+    next();
+  })
+}
+
 async function run() {
   try {
 
@@ -28,6 +45,16 @@ async function run() {
 
     const serviceCollection = client.db("carDoctor").collection("services");
     const bookingCollection = client.db("carDoctor").collection("bookings");
+
+    // JWT 
+    app.post('/jwt' , (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{
+        expiresIn:'1h'
+      });
+      res.send({token});
+    })
 
     // services -----------------------------
     app.get('/services', async (req, res) => {
@@ -51,8 +78,8 @@ async function run() {
 
     // bookings -----------------------------
 
-    app.get('/bookings', async (req, res) => {
-      console.log(req.query.email);
+    app.get('/bookings', verifyJWT,  async (req, res) => {
+      console.log(req.headers.authorization);
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email }

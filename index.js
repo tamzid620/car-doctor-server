@@ -22,9 +22,8 @@ const client = new MongoClient(uri, {
 });
 
 const verifyJWT = ( req, res , next ) => {
-  console.log('hitting vetify JWT');
-  console.log(req.headers.authorization);
-  if(authorization){
+  const authorization = req.headers.authorization;
+  if(!authorization){
     return res.status(401).send({error: true , message: 'unauthorized access'})
   }
   const token = authorization.split(' ')[1];
@@ -79,7 +78,13 @@ async function run() {
     // bookings -----------------------------
 
     app.get('/bookings', verifyJWT,  async (req, res) => {
-      console.log(req.headers.authorization);
+      const decoded = req.decoded;
+      console.log('came back after verify', decoded)
+
+      if(decoded.email !== req.query.email){
+         return res.status(403).send({error:1, message: 'forbidden access'})
+      }
+
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email }

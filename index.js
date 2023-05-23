@@ -57,10 +57,17 @@ async function run() {
 
     // services -----------------------------
     app.get('/services', async (req, res) => {
-      const serviceCollection = client.db('carDoctor').collection('services');
-      const cursor = serviceCollection.find();
+      const sort = req.query.sort;
+      const search = req.query.search;
+      console.log(search);  
+      // const query = {price: {$lt:100}};
+      const query = {title: {regex:search}};
+      const options = {
+        sort:{"price" : sort ==="asc" ? 1: -1}
+      }
+      const cursor = serviceCollection.find(query, options);
       const result = await cursor.toArray();
-      res.send(result);
+      res.send(result); 
     });
 
     app.get('/services/:id', async (req, res) => {
